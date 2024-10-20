@@ -42,10 +42,7 @@ app.post('/', async (req, res) => {
         if(maxPages){
             const response = Math.ceil(movies.length / 20)
             res.json({ maxPages : response })
-            return
-        }
-        
-        if (page && search) {
+        } else if (page && search) {
             // console.log("page y search")
             const filteredMovies = movies.filter(movie => movie.title.toLowerCase().includes(search.toLowerCase()));
             const start = 20 * (page - 1);
@@ -58,7 +55,8 @@ app.post('/', async (req, res) => {
             res.json(movies.slice(start, finish));
         } else if (search) {
             const filteredMovies = movies.filter(movie => movie.title.toLowerCase().includes(search.toLowerCase()));
-            res.json(filteredMovies);
+            const maxPages = Math.ceil(filteredMovies.length / 20)
+            res.json({filteredMovies, maxPages});
         } else {
             res.status(400).json({ error: "No page or search parameter provided" });
         }
