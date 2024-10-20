@@ -1,15 +1,10 @@
 import express from "express";
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import cors from "cors";
-import { serialize } from "v8";
+import { readFileAsync } from "./readFile.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
-const filePath = path.join(__dirname, "movies-2020s.json");
 
 
 app.use(cors());
@@ -26,54 +21,45 @@ app.get("/", (req, res) => {
     });
 });
 
-app.get("/:id", (req, res) => {
-    fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            res.status(500).json({ error: "Error reading file" });
-            return;
-        }
-        const movie = JSON.parse(data).find( movie => movie.href == req.params.id)
+app.get("/:id", async (req, res) => {
+    try{
+        const data = await readFileAsync();
+        const movie = data.find( movie => movie.href == req.params.id)
         res.json(movie);
-    });
+    } catch{
+        res.status(500).json({ error: "Error reading file" });
+    }
 })
 
-app.post('/', (req, res) => {
-    const page = req.body.pagina || req.query.pagina;
+app.post('/', async (req, res) => {
+    const page = req.body.page || req.query.page;
     const search = req.body.search || req.query.search
 
-    if (page) {
-        fs.readFile(filePath, "utf8", (err, data) => {
-            if (err) {
-                res.status(500).json({ error: "Error reading file" });
-                return;
-            }
-            const start = 20 * (page - 1)
-            const finish = 20 * page
-            const first20Movies = JSON.parse(data).slice(start, finish);
-            res.json(first20Movies);
-        });
-    }
-    else if(search){
-        fs.readFile(filePath, "utf8", (err, data) => {
-            if (err) {
-                res.status(500).json({ error: "Error reading file" });
-                return;
-            }
 
-            let count = 0;
-            const movies = [];
-            JSON.parse(data).forEach(movie => {
-                if (movie.title.toLowerCase().includes(search.toLowerCase()) && count < 20) {
-                    movies.push(movie);
-                    count++;
-                }
-            });
-            res.json(movies);
-        })
+    try{
+        const movies = await readFileAsync();
+        
+        if (page && search) {
+            // console.log("page y search")
+            const filteredMovies = movies.filter(movie => movie.title.toLowerCase().includes(search.toLowerCase()));
+            const start = 20 * (page - 1);
+            const finish = 20 * page;
+            res.json(filteredMovies.slice(start, finish));
+        } else if (page) {
+            // console.log("page")
+            const start = 20 * (page - 1);
+            const finish = 20 * page;
+            res.json(movies.slice(start, finish));
+        } else if (search) {
+            const filteredMovies = movies.filter(movie => movie.title.toLowerCase().includes(search.toLowerCase()));
+            res.json(filteredMovies);
+        } else {
+            res.status(400).json({ error: "No page or search parameter provided" });
+        }
+    } catch{
+        res.status(500).json({error : "No parametros"})
     }
-    else {
-      res.status(400).send('No se recibió ningún parámetro de búsqueda');
-    }
+
 });
 
 app.listen(3000, () => {
