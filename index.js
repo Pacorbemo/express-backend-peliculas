@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
+import { serialize } from "v8";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,24 +38,43 @@ app.get("/:id", (req, res) => {
 })
 
 app.post('/', (req, res) => {
-    const page = req.body.pagina;
-  
-    if (page) {
-      fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            res.status(500).json({ error: "Error reading file" });
-            return;
-        }
-        const start = 20 * (page - 1)
-        const finish = 20 * page
-        const first20Movies = JSON.parse(data).slice(start, finish);
-        res.json(first20Movies);
-    });
+    const page = req.body.pagina || req.query.pagina;
+    const search = req.body.search || req.query.search
 
-    } else {
-      res.status(400).send('No se recibió el valor de "pagina".');
+    if (page) {
+        fs.readFile(filePath, "utf8", (err, data) => {
+            if (err) {
+                res.status(500).json({ error: "Error reading file" });
+                return;
+            }
+            const start = 20 * (page - 1)
+            const finish = 20 * page
+            const first20Movies = JSON.parse(data).slice(start, finish);
+            res.json(first20Movies);
+        });
     }
-  });
+    else if(search){
+        fs.readFile(filePath, "utf8", (err, data) => {
+            if (err) {
+                res.status(500).json({ error: "Error reading file" });
+                return;
+            }
+
+            let count = 0;
+            const movies = [];
+            JSON.parse(data).forEach(movie => {
+                if (movie.title.toLowerCase().includes(search.toLowerCase()) && count < 20) {
+                    movies.push(movie);
+                    count++;
+                }
+            });
+            res.json(movies);
+        })
+    }
+    else {
+      res.status(400).send('No se recibió ningún parámetro de búsqueda');
+    }
+});
 
 app.listen(3000, () => {
     console.log("Server is running on port 3000");
