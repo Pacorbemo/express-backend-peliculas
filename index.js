@@ -34,10 +34,16 @@ app.get("/:id", async (req, res) => {
 app.post('/', async (req, res) => {
     const page = req.body.page || req.query.page;
     const search = req.body.search || req.query.search
-
+    const maxPages = req.body.maxPages || req.query.maxPages
 
     try{
         const movies = await readFileAsync();
+
+        if(maxPages){
+            const response = Math.ceil(movies.length / 20)
+            res.json({ maxPages : response })
+            return
+        }
         
         if (page && search) {
             // console.log("page y search")
