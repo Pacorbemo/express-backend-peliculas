@@ -2,10 +2,10 @@ import express from "express";
 import fs from "fs";
 import cors from "cors";
 import { readFileAsync } from "./readFile.js";
+import { cutArray } from "./cutArray.js";
 
 
 const app = express();
-
 
 app.use(cors());
 app.use(express.json())
@@ -45,18 +45,14 @@ app.post('/', async (req, res) => {
         } else if (page && search) {
             // console.log("page y search")
             const filteredMovies = movies.filter(movie => movie.title.toLowerCase().includes(search.toLowerCase()));
-            const start = 20 * (page - 1);
-            const finish = 20 * page;
-            res.json(filteredMovies.slice(start, finish));
+            res.json(cutArray(filteredMovies, page));
         } else if (page) {
             // console.log("page")
-            const start = 20 * (page - 1);
-            const finish = 20 * page;
-            res.json(movies.slice(start, finish));
+            res.json(cutArray(movies, page));
         } else if (search) {
             const filteredMovies = movies.filter(movie => movie.title.toLowerCase().includes(search.toLowerCase()));
             const maxPages = Math.ceil(filteredMovies.length / 20)
-            res.json({filteredMovies, maxPages});
+            res.json({filteredMovies : cutArray(filteredMovies), maxPages});
         } else {
             res.status(400).json({ error: "No page or search parameter provided" });
         }
