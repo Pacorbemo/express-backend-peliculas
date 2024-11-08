@@ -62,6 +62,18 @@ app.post('/', async (req, res) => {
 
 });
 
+app.post('/favorites', async(req,res) => {
+    const favoritesArray = req.body.movies._value
+    try{
+        const movies = await readFileAsync();
+
+        const favoriteMovies = movies.filter(movie => favoritesArray.includes(movie.href));
+        res.json(favoriteMovies);
+    }catch{
+        res.status(500).json({error : "Error"})
+    }
+})
+
 app.listen(3000, () => {
     console.log("Server is running on port 3000");
 });
